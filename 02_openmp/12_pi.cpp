@@ -12,7 +12,6 @@ int main() {
   for(int i=0; i<n; i++){
     double x = (i + 0.5) * dx;
     pi += 4.0 / (1.0 + x * x) * dx;
-    printf("thread num: %d x: %.2f pi: %.15f \n", omp_get_thread_num(), x, pi);
   }
   printf("%17.15f\n", pi);
 
