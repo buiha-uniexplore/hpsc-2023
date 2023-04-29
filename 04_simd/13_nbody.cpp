@@ -85,10 +85,7 @@ int main() {
         fyibvec = _mm256_hadd_ps(fyibvec, fyibvec);
         fyibvec = _mm256_hadd_ps(fyibvec, fyibvec);
         _mm256_store_ps(fyidb, fyibvec); 
-        /*
-        float testvec[N];
-        _mm256_store_ps(testvec, xjvec);
-        */
+      
 	float rxdb[N];
         float rydb[N];
         float rsqrdb[N];
@@ -96,11 +93,7 @@ int main() {
 	_mm256_store_ps(rxdb, rxvec);
 	_mm256_store_ps(rydb, ryvec);
 	_mm256_store_ps(rsqrdb, rsqr);
-        //_mm256_store_ps(fxidb, fxivec);
 
-	for(int k=0; k<N; k++){
-        //  printf("i=%d rx[%d]=%g ry[%d]=%g\n ", i, k, rxdb[k], k, rydb[k]);
-        }
 
         printf("%d %g %g \n", i, fxidb[0],fyidb[0]);
         
