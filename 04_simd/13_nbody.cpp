@@ -12,17 +12,14 @@ int main() {
     y[i] = drand48();
     m[i] = drand48();
     fx[i] = fy[i] = 0;
-   // printf("%d %g %g\n",i,x[i],y[i]);
+ 
   }
   
    __m256 xvec = _mm256_load_ps(x);
    __m256 yvec = _mm256_load_ps(y);
    __m256 mvec = _mm256_load_ps(m);
 
-  float iindex[N];
-  for(int i=0; i<N; i++){
-    iindex[i] = i;
-  }  
+  
   float jindex[N];
   for(int j=0; j<N; j++){
     jindex[j] = j;
