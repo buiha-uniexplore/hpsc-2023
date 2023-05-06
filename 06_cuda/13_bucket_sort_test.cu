@@ -14,18 +14,26 @@ __global__ void increment(int *bucket, int *key){
 
 }
 
+__global__ void offsetcalc(int *a, int *b, int n){
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  for(int j=1; j<n; j<<=1){
+    b[i] = a[i];
+    __syncthreads();
+    a[i] += b[i-j];
+    __syncthreads();
+  }
+  for (int i=0; i<n; i++) {
+  //  printf("%d ",a[i]);
+  }
+}
 
-__global__ void sort(int *bucket, int *key){
+__global__ void sort(int *bucket, int *key, int *offset){
   int i = threadIdx.x;
 
-  int offset = 0;
-
-  for (int k = 0; k < i; k++){
-    offset += bucket[k];
-  }
+  int offsetnum = offset[i-1];
 
   for (int jj=0; jj<bucket[i]; jj++){
-    key[jj+offset] = i;
+    key[jj+offsetnum] = i;
   }
 
 }
@@ -68,9 +76,9 @@ int main() {
   increment<<<1,n>>>(bucket, key);
   cudaDeviceSynchronize();
   for (int i=0; i<range; i++) {
-  //  printf("%d ", bucket[i]);
+    printf("%d ", bucket[i]);
   }
-  //printf("\n");
+  printf("\n");
 
   // for (int i=0, j=0; i<range; i++) {
   //   for (; bucket[i]>0; bucket[i]--) {
@@ -78,7 +86,23 @@ int main() {
   //   }
   // }
 
-  sort<<<1,range>>>(bucket, key);
+  int *offset, *offsetout;
+  cudaMallocManaged(&offset, range*sizeof(int));
+  cudaMallocManaged(&offsetout, range*sizeof(int));
+
+  for (int i = 0; i<range; i++){
+    offset[i] = bucket[i];
+  }
+
+
+  offsetcalc<<<1, range>>>(offset, offsetout, range);
+  cudaDeviceSynchronize();
+  for (int i=0; i<range; i++) {
+    printf("%d ",offsetout[i]);
+  }
+  printf("\n");
+
+  sort<<<1,range>>>(bucket, key, offset);
   cudaDeviceSynchronize();
 
   for (int i=0; i<n; i++) {
@@ -87,4 +111,7 @@ int main() {
   printf("\n");
 
   cudaFree(bucket);
+  cudaFree(key);
+  cudaFree(offset);
+  cudaFree(offsetout);
 }
