@@ -14,13 +14,14 @@ __global__ void increment(int *bucket, int *key){
 
 }
 
-__device__ __managed__ int jj=0;
-
-__global__ void sort(int * bucket, int *key, int &jj){
-  i = threadIdx.x;
-  extern __shared__ int jjj;
-  for (int t = bucket[i]; bucket[i] < 0; bucket[i]--){
-    
+__global__ void sort(int * bucket, int *key){
+  int i = threadIdx.x;
+  int offset = 0;
+  for (int k=0; k<i; k++) {
+    offset += bucket[k];
+  }
+  for (int jj=0; jj<bucket[i]; jj++){
+    key[jj+offset] = i;
   }
 
 }
@@ -50,9 +51,9 @@ int main() {
   initiate<<<1,range>>>(bucket);
   cudaDeviceSynchronize();
   for (int i=0; i<range; i++) {
-    printf("%d ", bucket[i]);
+  //  printf("%d ", bucket[i]);
   }
-  printf("\n");
+  //printf("\n");
 
   /*
   for (int i=0; i<n; i++) {
@@ -63,9 +64,9 @@ int main() {
   increment<<<1,n>>>(bucket, key);
   cudaDeviceSynchronize();
   for (int i=0; i<range; i++) {
-    printf("%d ", bucket[i]);
+  //  printf("%d ", bucket[i]);
   }
-  printf("\n");
+  //printf("\n");
 
   // for (int i=0, j=0; i<range; i++) {
   //   for (; bucket[i]>0; bucket[i]--) {
@@ -73,7 +74,7 @@ int main() {
   //   }
   // }
 
-  sort<<<1,range>>>(bucket, key, jj);
+  sort<<<1,range>>>(bucket, key);
   cudaDeviceSynchronize();
 
   for (int i=0; i<n; i++) {
