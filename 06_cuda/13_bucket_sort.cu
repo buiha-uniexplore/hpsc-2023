@@ -14,18 +14,24 @@ __global__ void increment(int *bucket, int *key){
 
 }
 
-
-__global__ void sort(int *bucket, int *key){
-  int i = threadIdx.x;
-
-  int offset = 0;
-
-  for (int k = 0; k < i; k++){
-    offset += bucket[k];
+__global__ void offsetcalc(int *a, int *b, int n){
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  for(int j=1; j<n; j<<=1){
+    b[i] = a[i];
+    __syncthreads();
+    a[i] += b[i-j];
+    __syncthreads();
   }
 
+}
+
+__global__ void sort(int *bucket, int *key, int *offset){
+  int i = threadIdx.x;
+
+  int offsetnum = offset[i-1];
+
   for (int jj=0; jj<bucket[i]; jj++){
-    key[jj+offset] = i;
+    key[jj+offsetnum] = i;
   }
 
 }
@@ -34,7 +40,6 @@ __global__ void sort(int *bucket, int *key){
 int main() {
   int n = 50;
   int range = 5;
-  //std::vector<int> key(n);
   int *key;
   cudaMallocManaged(&key, n*sizeof(int));
   for (int i=0; i<n; i++) {
@@ -43,42 +48,30 @@ int main() {
   }
   printf("\n");
 
-  /*
-  std::vector<int> bucket(range); 
-  for (int i=0; i<range; i++) {
-    bucket[i] = 0;
-  }
-  */
-
+  // First for loop
   int *bucket;
   cudaMallocManaged(&bucket, range*sizeof(int));
   initiate<<<1,range>>>(bucket);
   cudaDeviceSynchronize();
-  for (int i=0; i<range; i++) {
-  //  printf("%d ", bucket[i]);
-  }
-  //printf("\n");
 
-  /*
-  for (int i=0; i<n; i++) {
-    bucket[key[i]]++;
-  }
-  */
-
+  // Second for loop
   increment<<<1,n>>>(bucket, key);
   cudaDeviceSynchronize();
-  for (int i=0; i<range; i++) {
-  //  printf("%d ", bucket[i]);
+
+  // Calculating offset for third loop
+  int *offset, *offsetout;
+  cudaMallocManaged(&offset, range*sizeof(int));
+  cudaMallocManaged(&offsetout, range*sizeof(int));
+
+  for (int i = 0; i<range; i++){
+    offset[i] = bucket[i];
   }
-  //printf("\n");
 
-  // for (int i=0, j=0; i<range; i++) {
-  //   for (; bucket[i]>0; bucket[i]--) {
-  //     key[j++] = i;
-  //   }
-  // }
+  offsetcalc<<<1, range>>>(offset, offsetout, range);
+  cudaDeviceSynchronize();
 
-  sort<<<1,range>>>(bucket, key);
+  // Third for loop
+  sort<<<1,range>>>(bucket, key, offset);
   cudaDeviceSynchronize();
 
   for (int i=0; i<n; i++) {
@@ -87,4 +80,7 @@ int main() {
   printf("\n");
 
   cudaFree(bucket);
+  cudaFree(key);
+  cudaFree(offset);
+  cudaFree(offsetout);
 }
