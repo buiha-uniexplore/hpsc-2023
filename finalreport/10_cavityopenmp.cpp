@@ -47,13 +47,14 @@ int main(){
                         (v[j][i+1] - v[j][i-1]) / (2 * dx)) - ((v[j+1][i] - v[j-1][i]) / (2 * dy))*((v[j+1][i] - v[j-1][i]) / (2 * dy)));
             }
         }
+#pragma omp parallel for
         for (int it=0; it<nit; it++){
             for (int j = 1; j<ny-1; j++){
                 for (int i = 1; i<nx-1; i++){
                     pn[j][i] = p[j][i];
                 }
             }
-#pragma omp parallel for
+
             for (int j = 1; j<ny-1; j++){
                 for (int i = 1; i<nx-1; i++){
                     p[j][i] = (dy*dy * (pn[j][i+1] + pn[j][i-1]) +\
@@ -73,6 +74,7 @@ int main(){
                 p[ny-1][i] = p[ny-2][i]; //0?
             }
         }
+#pragma omp parallel for
         for (int j = 1; j<ny-1; j++){
             for (int i = 1; i<nx-1; i++){
                 un[j][i] = u[j][i];

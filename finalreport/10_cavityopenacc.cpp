@@ -28,6 +28,7 @@ int main(){
     chrono::steady_clock::time_point tic, toc;
     double time;
 
+
     for(int i = 0; i < nx; i++){
         for(int j = 0; j < ny; j++){
             u[i][j] = 0;
@@ -37,25 +38,27 @@ int main(){
         }
     }
 
-#pragma acc parallel loop
+
     for (int n=0; n<nt;n++){
         toc = chrono::steady_clock::now();
-#pragma acc parallel loop
+#pragma acc parallel loop         
         for (int j = 1; j<ny-1; j++){
             for (int i = 1; i<nx-1; i++){
+
                 b[j][i] = rho * (1 / dt *\
                         ((u[j][i+1] - u[j][i-1]) / (2 * dx) + (v[j+1][i] - v[j-1][i]) / (2 * dy)) -\
                         ((u[j][i+1] - u[j][i-1]) / (2 * dx))*((u[j][i+1] - u[j][i-1]) / (2 * dx)) - 2 * ((u[j+1][i] - u[j-1][i]) / (2 * dy) *\
                         (v[j][i+1] - v[j][i-1]) / (2 * dx)) - ((v[j+1][i] - v[j-1][i]) / (2 * dy))*((v[j+1][i] - v[j-1][i]) / (2 * dy)));
             }
         }
+#pragma acc parallel loop    
         for (int it=0; it<nit; it++){
             for (int j = 1; j<ny-1; j++){
                 for (int i = 1; i<nx-1; i++){
                     pn[j][i] = p[j][i];
                 }
             }
-#pragma acc parallel loop
+
             for (int j = 1; j<ny-1; j++){
                 for (int i = 1; i<nx-1; i++){
                     p[j][i] = (dy*dy * (pn[j][i+1] + pn[j][i-1]) +\
@@ -69,12 +72,13 @@ int main(){
                 p[j][nx-1] = p[j][nx-2];
                 p[j][0] = p[j][1];
             }
-
+ 
             for(int i = 1 ;i<nx-1; i++){
                 p[0][i] = p[1][i];
                 p[ny-1][i] = p[ny-2][i]; //0?
             }
         }
+#pragma acc parallel loop 
         for (int j = 1; j<ny-1; j++){
             for (int i = 1; i<nx-1; i++){
                 un[j][i] = u[j][i];
@@ -82,7 +86,7 @@ int main(){
             }
         }
 
-#pragma acc parallel loop
+#pragma acc parallel loop  
         for (int j = 1; j<ny-1; j++){
             for (int i = 1; i<nx-1; i++){
                 u[j][i] = un[j][i] - un[j][i] * dt / dx * (un[j][i] - un[j][i - 1])\
