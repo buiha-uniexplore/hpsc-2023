@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <vector>
 
+
 int main() {
   int n = 50;
   int range = 5;
@@ -16,6 +17,8 @@ int main() {
   for (int i=0; i<range; i++) {
     bucket[i] = 0;
   }
+  
+
   for (int i=0; i<n; i++) {
     bucket[key[i]]++;
   }

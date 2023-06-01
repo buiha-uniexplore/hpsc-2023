@@ -2,5 +2,5 @@
 
 int main() {
 #pragma omp parallel
-	std::cout << "hello\n";
+  std::cout << "hello\n";
 }
