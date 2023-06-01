@@ -3,17 +3,18 @@
 #include <vector>
 using namespace std;
 typedef vector<vector<float>> matrix;
+#include <immintrin.h>
 
 int main(){
     const int nx = 41;
     const int ny = 41;
     int nt = 500;
     int nit = 50;
-    double dx = 2 / (nx - 1);
-    double dy = 2 / (ny - 1);
-    double dt = .01;
-    double rho = 1;
-    double nu = .02;
+    float dx = 2 / (nx - 1);
+    float dy = 2 / (ny - 1);
+    float dt = .01;
+    float rho = 1;
+    float nu = .02;
     vector<float> x[nx];
     vector<float> y[ny];
     matrix u(ny, vector<float> (nx));
@@ -27,24 +28,14 @@ int main(){
     chrono::steady_clock::time_point tic, toc;
     double time;
 
-    /*
-    float xbegin = 0;
-    for (float i = 0; i < nx; i++){
-        xbegin += dx;
-        x.push_back(xbegin);
-        std::cout << x[i] << " ";
-    }
-
-    std::cout << std::endl;
-
-    std::vector<float> y;
-    float ybegin = 0;
-    for (float i = 0; i < ny; i++){
-        ybegin += dy;
-        y.push_back(ybegin);
-        std::cout << y[i] << " ";
-    }
-    */
+    // __m256 uvec = _mm256_load_ps(u);
+    // __m256 vvec = _mm256_load_ps(v);
+    // __m256 bvec = _mm256_load_ps(b);
+    // __m256 pvec = _mm256_load_ps(p);
+    // __m256 unvec = _mm256_load_ps(un);
+    // __m256 vnvec = _mm256_load_ps(vn);
+    // __m256 bnvec = _mm256_load_ps(bn);
+    // __m256 pnvec = _mm256_load_ps(pn);
 
     for(int i = 0; i < nx; i++){
         for(int j = 0; j < ny; j++){
@@ -103,11 +94,28 @@ int main(){
         printf("step =%d : %lf s\n", n, time);
         for (int j = 1; j<ny-1; j++){
             for (int i = 1; i<nx-1; i++){
-                u[j][i] = un[j][i] - un[j][i] * dt / dx * (un[j][i] - un[j][i - 1])\
-                                - un[j][i] * dt / dy * (un[j][i] - un[j - 1][i])\
-                                - dt / (2 * rho * dx) * (p[j][i+1] - p[j][i-1])\
-                                + nu * dt / dx*dx * (un[j][i+1] - 2 * un[j][i] + un[j][i-1])\
-                                + nu * dt / dy*dy * (un[j+1][i] - 2 * un[j][i] + un[j-1][i]);
+                __m256 unvec = _mm256_load_ps(&un[j][i]);
+                __m256 unim1 = _mm256_load_ps(&un[j][i-1]);
+                __m256 unip1 = _mm256_load_ps(&un[j][i+1]);
+                __m256 unjm1 = _mm256_load_ps(&un[j-1][i]);
+                __m256 unjp1 = _mm256_load_ps(&un[j+1][i]);
+                __m256 pip1 = _mm256_load_ps(&p[j][i+1]);
+                __m256 pim1 = _mm256_load_ps(&p[j][i-1]);
+                __m256 uvec;
+                uvec = unvec - unvec * dt / dx * (unvec - unim1)\
+                                - unvec * dt / dy * (unvec - unjm1)\
+                                - dt / (2 * rho * dx) * (pip1 - pim1)\
+                                + nu * dt / dx*dx * (unip1 - 2 * unvec + unim1)\
+                                + nu * dt / dy*dy * (unjp1 - 2 * unvec + unjm1);
+
+                _mm256_store_ps(&un[j][i], unvec);
+                _mm256_store_ps(&un[j][i-1], unim1);
+                _mm256_store_ps(&un[j][i+1], unip1);
+                _mm256_store_ps(&un[j-1][i], unjm1);
+                _mm256_store_ps(&un[j+1][i], unjp1);
+                _mm256_store_ps(&p[j][i+1], pip1);
+                _mm256_store_ps(&p[j][i-1], pim1);
+                _mm256_store_ps(&u[j][i], uvec);
                 v[j][i] = vn[j][i] - vn[j][i] * dt / dx * (vn[j][i] - vn[j][i - 1])\
                                 - vn[j][i] * dt / dy * (vn[j][i] - vn[j - 1][i])\
                                 - dt / (2 * rho * dx) * (p[j+1][i] - p[j-1][i])\
