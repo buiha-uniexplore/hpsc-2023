@@ -81,9 +81,7 @@ int main(){
                 vn[j][i] = v[j][i];
             }
         }
-        tic = chrono::steady_clock::now();
-        time = chrono::duration<double>(tic-toc).count();
-        printf("step =%d : %lf s\n", n, time);
+
 #pragma acc parallel loop
         for (int j = 1; j<ny-1; j++){
             for (int i = 1; i<nx-1; i++){
@@ -99,6 +97,10 @@ int main(){
                                 + nu * dt / dy*dy * (vn[j+1][i] - 2 * vn[j][i] + vn[j-1][i]);
             }
         }
+
+        tic = chrono::steady_clock::now();
+        time = chrono::duration<double>(tic-toc).count();
+        printf("step =%d : %lf s\n", n, time);
 
         for(int j = 1; j<ny-1; j++){
             u[j][0] = 0;

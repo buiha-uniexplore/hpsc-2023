@@ -23,6 +23,7 @@ int main(){
     vector<float> x[nx];
     vector<float> y[ny];
     matrix u(ny, vector<float> (nx));
+    
     matrix v(ny, vector<float> (nx));
     matrix b(ny, vector<float> (nx));
     matrix p(ny, vector<float> (nx));

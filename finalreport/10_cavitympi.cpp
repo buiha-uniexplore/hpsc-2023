@@ -3,12 +3,9 @@
 #include <vector>
 using namespace std;
 typedef vector<vector<float>> matrix;
+#include "mpi.h"
 
 int main(int argc, char** argv){
-    MPI_Init(&argc, &argv);
-    int size, rank;
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     const int nx = 41;
     const int ny = 41;
     int nt = 500;
@@ -40,12 +37,17 @@ int main(int argc, char** argv){
         }
     }
 
+    MPI_Init(&argc, &argv);
+    int size, rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
-    int begin = rank * (nt/size);
-    int end = (rank + 1) * (nt/size);
+    int begin = rank * (nit/size);
+    int end = (rank + 1) * (nit/size);
 
-    for (int n=begin; n<end;n++){
+    for (int n=0; n<nt;n++){
         toc = chrono::steady_clock::now();
+        
         for (int j = 1; j<ny-1; j++){
             for (int i = 1; i<nx-1; i++){
                 b[j][i] = rho * (1 / dt *\
@@ -54,7 +56,7 @@ int main(int argc, char** argv){
                         (v[j][i+1] - v[j][i-1]) / (2 * dx)) - ((v[j+1][i] - v[j-1][i]) / (2 * dy))*((v[j+1][i] - v[j-1][i]) / (2 * dy)));
             }
         }
-        for (int it=0; it<nit; it++){
+        for (int it=begin; it<end; it++){
             for (int j = 1; j<ny-1; j++){
                 for (int i = 1; i<nx-1; i++){
                     pn[j][i] = p[j][i];
@@ -118,6 +120,8 @@ int main(int argc, char** argv){
             v[ny-1][i] = 0;
         }
     }
+
+    MPI_Finalize();
 }
 
 

@@ -51,10 +51,23 @@ int main(){
         toc = chrono::steady_clock::now();
         for (int j = 1; j<ny-1; j++){
             for (int i = 1; i<nx-1; i++){
-                b[j][i] = rho * (1 / dt *\
-                        ((u[j][i+1] - u[j][i-1]) / (2 * dx) + (v[j+1][i] - v[j-1][i]) / (2 * dy)) -\
-                        ((u[j][i+1] - u[j][i-1]) / (2 * dx))*((u[j][i+1] - u[j][i-1]) / (2 * dx)) - 2 * ((u[j+1][i] - u[j-1][i]) / (2 * dy) *\
-                        (v[j][i+1] - v[j][i-1]) / (2 * dx)) - ((v[j+1][i] - v[j-1][i]) / (2 * dy))*((v[j+1][i] - v[j-1][i]) / (2 * dy)));
+
+                __m256 bvec;
+                __m256 uim1 = _mm256_loadu_ps(&u[j][i-1]);
+                __m256 uip1 = _mm256_loadu_ps(&u[j][i+1]);
+                __m256 ujm1 = _mm256_loadu_ps(&u[j-1][i]);
+                __m256 ujp1 = _mm256_loadu_ps(&u[j+1][i]);
+                __m256 vim1 = _mm256_loadu_ps(&v[j][i-1]);
+                __m256 vip1 = _mm256_loadu_ps(&v[j][i+1]);
+                __m256 vjm1 = _mm256_loadu_ps(&v[j-1][i]);
+                __m256 vjp1 = _mm256_loadu_ps(&v[j+1][i]);
+
+                bvec = rho * (1 / dt *\
+                        ((uip1 - uim1) / (2 * dx) + (vjp1 - vjm1) / (2 * dy)) -\
+                        ((uip1 - uim1) / (2 * dx))*((uip1 - uim1) / (2 * dx)) - 2 * ((ujp1 - ujm1) / (2 * dy) *\
+                        (vip1 - vim1) / (2 * dx)) - ((vjp1 - vjm1) / (2 * dy))*((vjp1 - vjm1) / (2 * dy)));
+            
+                _mm256_storeu_ps(&b[i][j], bvec);
             }
         }
         for (int it=0; it<nit; it++){
@@ -94,13 +107,13 @@ int main(){
         printf("step =%d : %lf s\n", n, time);
         for (int j = 1; j<ny-1; j++){
             for (int i = 1; i<nx-1; i++){
-                __m256 unvec = _mm256_load_ps(&un[j][i]);
-                __m256 unim1 = _mm256_load_ps(&un[j][i-1]);
-                __m256 unip1 = _mm256_load_ps(&un[j][i+1]);
-                __m256 unjm1 = _mm256_load_ps(&un[j-1][i]);
-                __m256 unjp1 = _mm256_load_ps(&un[j+1][i]);
-                __m256 pip1 = _mm256_load_ps(&p[j][i+1]);
-                __m256 pim1 = _mm256_load_ps(&p[j][i-1]);
+                __m256 unvec = _mm256_loadu_ps(&un[j][i]);
+                __m256 unim1 = _mm256_loadu_ps(&un[j][i-1]);
+                __m256 unip1 = _mm256_loadu_ps(&un[j][i+1]);
+                __m256 unjm1 = _mm256_loadu_ps(&un[j-1][i]);
+                __m256 unjp1 = _mm256_loadu_ps(&un[j+1][i]);
+                __m256 pip1 = _mm256_loadu_ps(&p[j][i+1]);
+                __m256 pim1 = _mm256_loadu_ps(&p[j][i-1]);
                 __m256 uvec;
                 uvec = unvec - unvec * dt / dx * (unvec - unim1)\
                                 - unvec * dt / dy * (unvec - unjm1)\
@@ -108,19 +121,33 @@ int main(){
                                 + nu * dt / dx*dx * (unip1 - 2 * unvec + unim1)\
                                 + nu * dt / dy*dy * (unjp1 - 2 * unvec + unjm1);
 
-                _mm256_store_ps(&un[j][i], unvec);
-                _mm256_store_ps(&un[j][i-1], unim1);
-                _mm256_store_ps(&un[j][i+1], unip1);
-                _mm256_store_ps(&un[j-1][i], unjm1);
-                _mm256_store_ps(&un[j+1][i], unjp1);
-                _mm256_store_ps(&p[j][i+1], pip1);
-                _mm256_store_ps(&p[j][i-1], pim1);
-                _mm256_store_ps(&u[j][i], uvec);
-                v[j][i] = vn[j][i] - vn[j][i] * dt / dx * (vn[j][i] - vn[j][i - 1])\
-                                - vn[j][i] * dt / dy * (vn[j][i] - vn[j - 1][i])\
-                                - dt / (2 * rho * dx) * (p[j+1][i] - p[j-1][i])\
-                                + nu * dt / dx*dx * (vn[j][i+1] - 2 * vn[j][i] + vn[j][i-1])\
-                                + nu * dt / dy*dy * (vn[j+1][i] - 2 * vn[j][i] + vn[j-1][i]);
+                // _mm256_storeu_ps(&un[j][i], unvec);
+                // _mm256_storeu_ps(&un[j][i-1], unim1);
+                // _mm256_storeu_ps(&un[j][i+1], unip1);
+                // _mm256_storeu_ps(&un[j-1][i], unjm1);
+                // _mm256_storeu_ps(&un[j+1][i], unjp1);
+                // _mm256_storeu_ps(&p[j][i+1], pip1);
+                // _mm256_storeu_ps(&p[j][i-1], pim1);
+                _mm256_storeu_ps(&u[j][i], uvec);
+
+                __m256 vnvec = _mm256_loadu_ps(&vn[j][i]);
+                __m256 vnim1 = _mm256_loadu_ps(&vn[j][i-1]);
+                __m256 vnip1 = _mm256_loadu_ps(&vn[j][i+1]);
+                __m256 vnjm1 = _mm256_loadu_ps(&vn[j-1][i]);
+                __m256 vnjp1 = _mm256_loadu_ps(&vn[j+1][i]);
+                __m256 pjp1 = _mm256_loadu_ps(&p[j+1][i]);
+                __m256 pjm1 = _mm256_loadu_ps(&p[j-1][i]);
+                __m256 vvec;
+                vvec = vnvec - vnvec * dt / dx * (vnvec - vnim1)\
+                                - vnvec * dt / dy * (vnvec - vnjm1)\
+                                - dt / (2 * rho * dx) * (pjp1 - pjm1)\
+                                + nu * dt / dx*dx * (vnip1 - 2 * vnvec + vnim1)\
+                                + nu * dt / dy*dy * (vnjp1 - 2 * vnvec + vnjm1);
+
+                // _mm256_storeu_ps(&p[j+1][i], pjp1);
+                // _mm256_storeu_ps(&p[j-1][i], pjm1);
+                _mm256_storeu_ps(&v[j][i], vvec);
+               
             }
         }
 
