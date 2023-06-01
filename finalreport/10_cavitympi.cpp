@@ -3,8 +3,10 @@
 #include <vector>
 using namespace std;
 typedef vector<vector<float>> matrix;
+#include <mpi.h>
 
-int main(){
+int main(int argc, char** argv){
+    MPI_Init(&argc, &argv);
     const int nx = 41;
     const int ny = 41;
     int nt = 500;
@@ -130,6 +132,7 @@ int main(){
             v[ny-1][i] = 0;
         }
     }
+    MPI_Finalize();
 }
 
 
