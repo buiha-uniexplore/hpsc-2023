@@ -71,7 +71,7 @@ int main(){
 
             for(int i = 1 ;i<nx-1; i++){
                 p[0][i] = p[1][i];
-                p[ny-1][i] = p[ny-2][i]; //0?
+                p[ny-1][i] = 0; //0?
             }
         }
         for (int j = 1; j<ny-1; j++){
